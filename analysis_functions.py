@@ -56,14 +56,12 @@ def grab_col_names(dataframe, cat_th=10, car_th=20):
 
 
 
-def cat_summary(dataframe, col_name, target, plot=False):
+def cat_summary(dataframe, col_name, plot=False):
     print(pd.DataFrame({col_name: dataframe[col_name].value_counts(),
                         "Ratio": 100 * dataframe[col_name].value_counts() / len(dataframe)}))
     print("##########################################")
-    print(pd.DataFrame({"TARGET_MEAN": dataframe.groupby(col_name)[target].mean()}), end="\n\n\n")
     if plot:
-        fig = px.histogram(dataframe, x=col_name, color=target,width=400, height=400)
-        fig.show()
+        sns.countplot(x=dataframe[col_name], data=dataframe)
         plt.show(block=True)
 def num_summary(dataframe, numerical_col, plot=False):
     quantiles = [0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 0.99]
@@ -225,6 +223,19 @@ def voting_classifier(best_models, X, y):
     print(f"ROC_AUC: {cv_results['test_roc_auc'].mean()}")
     return voting_clf
 
+
+
+def plot_importance(model, features, num=len(X), save=False):
+    feature_imp = pd.DataFrame({'Value': model.feature_importances_, 'Feature': features.columns})
+    plt.figure(figsize=(10, 10))
+    sns.set(font_scale=1)
+    sns.barplot(x="Value", y="Feature", data=feature_imp.sort_values(by="Value",
+                                                                     ascending=False)[0:num])
+    plt.title('Features')
+    plt.tight_layout()
+    plt.show(block=True)
+    if save:
+        plt.savefig('importances.png')
 
 
 
