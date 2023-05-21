@@ -30,12 +30,19 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+import datetime as dt
 import missingno as msno
 from sklearn.preprocessing import StandardScaler
 from datetime import date
 from analysis_functions import *
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.model_selection import GridSearchCV, cross_validate, RandomizedSearchCV, validation_curve
+
 
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
@@ -60,7 +67,6 @@ def df_load():
 
 
 df_load()
-
 check_df(df)
 
 cat_cols, num_cols, cat_but_car = grab_col_names(df, cat_th=8, car_th=20)
@@ -126,9 +132,9 @@ df.dtypes
 #     return (100*((1+x)**3)) - (100+((100*x)*3))
 # function(0.07)
 
-
 df_load()
 df.describe().T
+df.shape
 
 df.arrival_month.value_counts().sort_index()
 
@@ -166,10 +172,71 @@ for col in num_cols:
     sns.boxplot(x=df[col], whis = 1.5)
     plt.show(block = True)
 
+
+############################# feature_extraction
+
+
+# ['no_of_adults', 'no_of_children', 'no_of_weekend_nights', 'no_of_week_nights', 'type_of_meal_plan',
+#  'required_car_parking_space', 'room_type_reserved', 'lead_time', 'arrival_year', 'arrival_month',
+#  'arrival_date', 'market_segment_type', 'repeated_guest', 'no_of_previous_cancellations',
+#  'no_of_previous_bookings_not_canceled', 'avg_price_per_room', 'no_of_special_requests', 'booking_status']
+
+
+temp = df.rename(columns={
+    'arrival_year': 'year',
+    'arrival_month': 'month',
+    'arrival_date': 'day'
+})
+df['date_NEW'] = pd.to_datetime(temp[['year', 'month', 'day']], errors='coerce')
+df['date_NEW'].head()
+
+df.isnull().sum()
+
+df.loc[(df['arrival_date']==29) &(df['arrival_month']==2)].count()
+df.loc[df['arrival_year']==2018,'date_NEW'].isnull().sum()
+df.loc[df['arrival_year']==2017,'date_NEW'].isnull().sum()
+df['date_NEW'].fillna('2018-02-28', inplace=True)
+
+df.drop('date_NEW', axis = 1, inplace = True)
+
+df['date_booking_NEW'] = df['date_NEW'] - pd.to_timedelta(df['lead_time'], unit='D')
+
+df['date_booking_NEW'].head()
+
+df['lead_time'].head()
+df.drop('date_booking_NEW', axis = 1 , inplace = True)
+# df2 = df.set_index('date_NEW')
+#
+# df2.loc[:,'lead_time'].plot(style='.',
+#           figsize=(15, 5),
+#           ms=1,
+#           #color=color_pal[0],
+#           subplots=True,
+#           grid=True)
+# plt.show(block=True)
+# df2.head()
+# df2 = df2.sort_index()
+# df2.head()
+
+df["no_of_guest_NEW"] = df["no_of_adults"]+df["no_of_children"]
+
+df["no_of_nights_NEW"] = df["no_of_weekend_nights"]+df["no_of_week_nights"]
+
+df['no_of_previous_cancellations'].value_counts()
+df['no_of_previous_bookings_not_canceled'].value_counts()
+
+df.head()
+
+
+
+df.dtypes
+
+
+
 # ohe_cols = [col for col in df.cat_cols if dataframe[col].dtypes == "O"]
 df.no_of_previous_bookings_not_canceled.value_counts().sort_index()
 df.columns
-df.loc[df["no_of_previous_bookings_not_canceled"]>=1,"booking_status"].value_counts()
+df.loc[df["no_of_previous_bookings_not_canceled"]>=1,"booking_status"].count()/len(df)
 
 df = one_hot_encoder(df, cat_cols, drop_first=True)
 
@@ -185,11 +252,14 @@ df[num_cols] = pd.DataFrame(X_scaled, columns=df[num_cols].columns)
 y = df["booking_status"]
 X = df.drop(["booking_status"], axis=1)
 
+X.dtypes
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=17)
+
+df.head()
+df.dtypes
+xgboost_model = XGBClassifier(random_state=17, use_label_encoder=False).fit(X_train,y_train)
 
 
-
-
-xgboost_model = XGBClassifier(random_state=17, use_label_encoder=False)
 xgboost_model.get_params()
 cv_results = cross_validate(xgboost_model, X, y, cv=5, scoring=["accuracy", "f1", "roc_auc"])
 cv_results['test_accuracy'].mean()
@@ -197,6 +267,21 @@ cv_results['test_accuracy'].mean()
 cv_results['test_f1'].mean()
 
 cv_results['test_roc_auc'].mean()
+
+
+y_pred = xgboost_model.predict(X_test)
+accuracy_score(y_pred, y_test)
+
+
+
+
+
+plot_importance(xgboost_model, X, num=len(X))
+
+
+
+
+
 
 
 lgbm_model = LGBMClassifier(random_state=17)
@@ -223,29 +308,10 @@ df.columns
 df.dtypes
 df.describe().T
 df.nunique()
-# ['no_of_adults', 'no_of_children', 'no_of_weekend_nights', 'no_of_week_nights', 'type_of_meal_plan',
-#  'required_car_parking_space', 'room_type_reserved', 'lead_time', 'arrival_year', 'arrival_month',
-#  'arrival_date', 'market_segment_type', 'repeated_guest', 'no_of_previous_cancellations',
-#  'no_of_previous_bookings_not_canceled', 'avg_price_per_room', 'no_of_special_requests', 'booking_status']
+
 df_load()
 
-temp = df.rename(columns={
-    'arrival_year': 'year',
-    'arrival_month': 'month',
-    'arrival_date': 'day'
-})
-df['date_NEW'] = pd.to_datetime(temp[['year', 'month', 'day']], errors='coerce')
 
-
-df["no_of_guest_NEW"] = df["no_of_adults"]+df["no_of_children"]
-
-df["no_of_nights_NEW"] = df["no_of_weekend_nights"]+df["no_of_week_nights"]
-
-df['no_of_previous_cancellations'].value_counts()
-df['no_of_previous_bookings_not_canceled'].value_counts()
-df.loc[df['arrival_date']==29,"arrival_month"].value_counts()
-df.head()
-df['date_NEW'].dtype
 
 df.head()
 

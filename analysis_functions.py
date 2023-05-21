@@ -159,6 +159,8 @@ def check_outlier(dataframe, col_name):
         return False
 
 
+
+
 def one_hot_encoder(dataframe, categorical_cols, drop_first=False):
     dataframe = pd.get_dummies(dataframe, columns=categorical_cols, drop_first=drop_first)
     return dataframe
@@ -225,7 +227,7 @@ def voting_classifier(best_models, X, y):
 
 
 
-def plot_importance(model, features, num=len(X), save=False):
+def plot_importance(model, features, num, save=False):
     feature_imp = pd.DataFrame({'Value': model.feature_importances_, 'Feature': features.columns})
     plt.figure(figsize=(10, 10))
     sns.set(font_scale=1)

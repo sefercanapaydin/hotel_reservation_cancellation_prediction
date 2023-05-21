@@ -18,18 +18,72 @@
 # no_of_special_requests	Count of special requests made as part of the booking.
 # booking_status	Whether the booking was cancelled or not.
 
-
-import numpy as np
+import streamlit as st
+from streamlit_lottie import st_lottie
+import requests
+from PIL import Image
 import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
 
-
-
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
-pd.set_option('display.float_format', lambda x: '%.3f' % x)
-pd.set_option('display.width', 500)
-
+st.set_page_config(page_title = "Miuul Resort Hotel Sunar!", page_icon = ":sunglasses:", layout = "wide")
 
 df = pd.read_csv("hotel_bookings.csv")
+
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+background-image: url("https://images.unsplash.com/photo-1501426026826-31c667bdf23d");
+background-size: cover%;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html = True)
+st.title(":orange[Tatil Zamanı!] :sunglasses:")
+
+st.title("**Bodrum, Miuul Resort Hotel'e Hoşgeldiniz** 🌅")
+st.subheader("*:blue[Vahit Keskin]: Son zamanlarda otelimizde yer ayırtıp birkaç gün kala iptal eden müşterilerimiz var. Bu durum otel kaynaklarının kullanımı açısından bizi "
+             "oldukça zor durumda bırakıyor. Hangi müşterilerimizin rezervasyonunu iptal edeceğini önceden :red[tahminleyip] aksiyonlar almanızı ve otelimizin verimini "
+             "artırmanızı bekliyorum.*")
+
+col1, col2, col3 = st.columns(3)
+
+with col2:
+    image_v1 = Image.open('miuul_hotel.jpg')
+    st.image(image_v1, caption = 'Miuul Resort Hotel Bodrum', width = 616)
+
+def load_lottieurl(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+
+blue_hotel = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_LYavbtkrBH.json")
+man_in_island = load_lottieurl("https://assets9.lottiefiles.com/private_files/lf30_vdqgavca.json")
+front_desk = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_5ohCYt.json")
+
+with st.expander("1 - Amaç Hakkında"):
+    with st.container():
+        st.markdown("<h2 style='text-align: center;'>AMACIMIZ</h2>", unsafe_allow_html = True)
+        st.write("---")
+        col1, col2, col3, col4 = st.columns(4)
+        with col2:
+            st.write("##")
+            st.write("##")
+            st.write("##")
+            st.write("##")
+            st.write("**Rezervasyon iptali, gelir üzerinde önemli bir etkiye sahiptir ve otel sektöründe yönetim kararlarını etkilemektedir. İptal etmenin etkisini azaltmak ve "
+                     "sorunu çözmek için makine öğrenimine dayalı bir iptal model sistemi geliştirilmiştir. Veri bilimi araçları, insan yargısı ve davranışlarıyla birleştirilerek,"
+                     "modelin tahmin analizinin, rezervasyon iptali tahminleri konusunda öngörülere nasıl katkıda bulunabileceği gösterilecektir.**")
+        with col3:
+            st_lottie(man_in_island, height = 400)
+
+with st.expander("2 - Veri Hakkında"):
+    with st.container():
+        st.markdown("<h2 style='text-align: center;'>MÜŞTERİLER ve REZARVASYONLAR</h2>", unsafe_allow_html = True)
+        st.write("---")
+        st.dataframe(df)
+
+        col1, col2, col3,col4 = st.columns(4)
+        with col1,col2:
+            image_v2 = Image.open('columns.jpg')
+            st.image(image_v2, caption = 'Miuul Resort Hotel Degişkenler', width = 1200)
