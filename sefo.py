@@ -37,7 +37,7 @@ from datetime import date
 from analysis_functions import *
 
 
-
+from yellowbrick.classifier import ConfusionMatrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
@@ -65,7 +65,7 @@ def df_load():
     df.drop("Booking_ID", axis=1, inplace=True)
 
 
-
+df.loc[df['market_segment_type']=='Aviation',"lead_time"].describe()
 df_load()
 check_df(df)
 
@@ -143,7 +143,7 @@ df.arrival_month.describe()
 # df.arrival_year = pd.to_datetime(df.arrival_year, format='%Y')
 
 
-
+df[df['booking_status']==0].groupby('arrival_month')[['no_of_adults']].count().columns
 
 
 ################ correlation
@@ -252,11 +252,8 @@ df[num_cols] = pd.DataFrame(X_scaled, columns=df[num_cols].columns)
 y = df["booking_status"]
 X = df.drop(["booking_status"], axis=1)
 
-X.dtypes
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=17)
 
-df.head()
-df.dtypes
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=17)
 xgboost_model = XGBClassifier(random_state=17, use_label_encoder=False).fit(X_train,y_train)
 
 
@@ -270,6 +267,7 @@ cv_results['test_roc_auc'].mean()
 
 
 y_pred = xgboost_model.predict(X_test)
+
 accuracy_score(y_pred, y_test)
 
 
@@ -327,3 +325,22 @@ for col in num_cols:
     sns.kdeplot(x=col,hue='booking_status',shade=True,data=df,)
 plt.legend(['Booking','No Booking'])
 plt.show(block=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cm = ConfusionMatrix(decision_tree)
+cm.fit(X_train, y_train)
+cm.score(X_test, y_test)
