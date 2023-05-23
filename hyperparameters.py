@@ -1,3 +1,22 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
+from hyperparameters import *
+import joblib
+import plotly.express as px
+
+
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier, AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_validate, GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
+
 knn_params = {"n_neighbors": range(2, 50)}
 
 cart_params = {'max_depth': range(1, 20),
@@ -20,5 +39,5 @@ lightgbm_params = {"learning_rate": [0.01, 0.1],
 classifiers = [('KNN', KNeighborsClassifier(), knn_params),
                ("CART", DecisionTreeClassifier(), cart_params),
                ("RF", RandomForestClassifier(), rf_params),
-               ('XGBoost', XGBClassifier(use_label_encoder=False, eval_metric='logloss'), xgboost_params),
+               ('XGBoost', XGBClassifier(eval_metric='logloss'), xgboost_params),
                ('LightGBM', LGBMClassifier(), lightgbm_params)]

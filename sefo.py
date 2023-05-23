@@ -50,9 +50,6 @@ from catboost import CatBoostClassifier
 import warnings
 warnings.filterwarnings("ignore")
 
-
-
-
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
@@ -63,9 +60,12 @@ def df_load():
     df = pd.read_csv("hotel_bookings.csv")
     df["booking_status"] = np.where(df["booking_status"] == "Not_Canceled", "0", "1").astype("int64")
     df.drop("Booking_ID", axis=1, inplace=True)
+    df.loc[df['type_of_meal_plan'] == 'Not Selected', 'type_of_meal_plan'] = 'Just Room'
+    df.loc[df['type_of_meal_plan'] == 'Meal Plan 1', 'type_of_meal_plan'] = 'Breakfast'
+    df.loc[df['type_of_meal_plan'] == 'Meal Plan 2', 'type_of_meal_plan'] = 'Half Board'
+    df.loc[df['type_of_meal_plan'] == 'Meal Plan 3', 'type_of_meal_plan'] = 'Full Board'
 
 
-df.loc[df['market_segment_type']=='Aviation',"lead_time"].describe()
 df_load()
 check_df(df)
 
@@ -103,8 +103,10 @@ for col in df.columns:
         df[col] = df[col].astype("int64")
 
 
-for col in cat_cols:
-    df[col] = df[col].astype("object")
+
+
+
+
 
 
 df.dtypes
@@ -119,34 +121,114 @@ for col in cat_cols:
     target_summary_with_cat(df,"booking_status", col)
 
 
+
+### feature engıneerıngten sonra tekrar bak
+
+
+######################### outlier
+
+check_outlier(df, num_cols)
+
+for col in num_cols:
+    replace_with_thresholds(df2,col)
+
+for col in num_cols:
+    sns.boxplot(x=df2[col], whis = 1.5)
+    plt.show(block = True)
+
+df2.describe().T
+#Before treshold
+#
+#                                          count    mean    std   min    25%    50%     75%     max
+# no_of_weekend_nights                 36275.000   0.812  0.867 0.000  0.000  1.000   2.000   7.000
+# no_of_week_nights                    36275.000   2.199  1.394 0.000  1.000  2.000   3.000  17.000
+# lead_time                            36275.000  85.052 85.579 0.000 17.000 57.000 125.000 443.000
+# arrival_month                        36275.000   7.432  3.048 1.000  5.000  8.000  10.000  12.000
+# arrival_date                         36275.000  15.616  8.625 1.000  8.000 16.000  23.000  31.000
+# no_of_previous_cancellations         36275.000   0.023  0.368 0.000  0.000  0.000   0.000  13.000
+# no_of_previous_bookings_not_canceled 36275.000   0.152  1.751 0.000  0.000  0.000   0.000  58.000
+# avg_price_per_room                   36275.000 103.372 34.844 0.000 80.750 99.450 120.000 540.000
+# booking_status                       36275.000   0.328  0.469 0.000  0.000  0.000   1.000   1.000
+#After treshold
+#                                          count    mean    std   min    25%    50%     75%     max
+# no_of_weekend_nights                 36275.000   0.812  0.863 0.000  0.000  1.000   2.000   5.000
+# no_of_week_nights                    36275.000   2.189  1.336 0.000  1.000  2.000   3.000   8.500 -
+# lead_time                            36275.000  85.052 85.579 0.000 17.000 57.000 125.000 443.000
+# arrival_month                        36275.000   7.432  3.048 1.000  5.000  8.000  10.000  12.000
+# arrival_date                         36275.000  15.616  8.625 1.000  8.000 16.000  23.000  31.000
+# no_of_previous_cancellations         36275.000   0.000  0.000 0.000  0.000  0.000   0.000   0.000 -
+# no_of_previous_bookings_not_canceled 36275.000   0.000  0.000 0.000  0.000  0.000   0.000   0.000 -
+# avg_price_per_room                   36275.000 103.338 34.636 0.000 80.750 99.450 120.000 266.200 -
+# booking_status                       36275.000   0.328  0.469 0.000  0.000  0.000   1.000   1.000
+
+
+df2 = df.copy()
+
+############################# feature_extraction
+
+# ['no_of_adults', 'no_of_children', 'no_of_weekend_nights', 'no_of_week_nights', 'type_of_meal_plan',
+#  'required_car_parking_space', 'room_type_reserved', 'lead_time', 'arrival_year', 'arrival_month',
+#  'arrival_date', 'market_segment_type', 'repeated_guest', 'no_of_previous_cancellations',
+#  'no_of_previous_bookings_not_canceled', 'avg_price_per_room', 'no_of_special_requests', 'booking_status']
+
+
+df['avg_price_per_room'].describe()
+
+df.groupby("room_type_reserved")["avg_price_per_room"].agg(["mean","count"])
+def time_features (df):
+    temp = df.rename(columns={
+        'arrival_year': 'year',
+        'arrival_month': 'month',
+        'arrival_date': 'day'
+    })
+    df['date'] = pd.to_datetime(temp[['year', 'month', 'day']], errors='coerce')
+    df['date'].fillna('2018-02-28', inplace=True)
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+    df['day'] = df['date'].dt.day
+    df['dayofweek'] = df['date'].dt.dayofweek
+    df['quarter'] = df['date'].dt.quarter
+    df['dayofyear'] = df['date'].dt.dayofyear
+    df['booking_date'] = df['date'] - pd.to_timedelta(df['lead_time'], unit='D')
+    df['booking_year'] = df['booking_date'].dt.year
+    df['booking_month'] = df['booking_date'].dt.month
+    df['booking_week'] = df['booking_date'].dt.isocalendar().week.astype(float)
+    df['booking_day'] = df['booking_date'].dt.day
+    df['booking_dayofweek'] = df['booking_date'].dt.dayofweek
+    df['booking_quarter'] = df['booking_date'].dt.quarter
+    df['booking_dayofyear'] = df['booking_date'].dt.dayofyear
+    df.drop(['booking_date','date','arrival_month','arrival_date','arrival_year'], axis=1, inplace=True)
+    return df
+
+
+df = time_features(df)
+
+df.head()
+
+df['room_segment'] = pd.qcut(df['avg_price_per_room'], 4, labels=['cheap','normal','expensive','suite'] )
+
+df["no_of_guest_NEW"] = df["no_of_adults"].astype('int64')+df["no_of_children"].astype('int64')
+df["no_of_nights_NEW"] = df["no_of_weekend_nights"].astype('int64')+df["no_of_week_nights"].astype('int64')
+
+
+
+cat_cols, num_cols, cat_but_car = grab_col_names(df, cat_th=8, car_th=20)
+cat_cols = [col for col in cat_cols if "booking_status" not in col]
+for col in cat_cols:
+    df[col] = df[col].astype("object")
+
+
 ############# Rare Analyser
 rare_analyser(df, "booking_status", cat_cols)
 
 df = rare_encoder(df, 0.01)
 
-df.head()
+df.isnull().sum()
 
-df.dtypes
-
-# def function (x):
-#     return (100*((1+x)**3)) - (100+((100*x)*3))
-# function(0.07)
-
-df_load()
-df.describe().T
-df.shape
-
-df.arrival_month.value_counts().sort_index()
-
-df.arrival_month.describe()
-
-# df.arrival_year = pd.to_datetime(df.arrival_year, format='%Y')
-
-
-df[df['booking_status']==0].groupby('arrival_month')[['no_of_adults']].count().columns
 
 
 ################ correlation
+
 
 correlation_matrix(df, num_cols)
 
@@ -162,127 +244,69 @@ plt.xticks(rotation = 90)
 plt.title('Correlation Heatmap')
 plt.show(block=True)
 
-######################### outlier
 
-check_outlier(df, num_cols)
-for col in num_cols:
-    replace_with_thresholds(df,col)
-
-for col in num_cols:
-    sns.boxplot(x=df[col], whis = 1.5)
-    plt.show(block = True)
-
-
-############################# feature_extraction
-
-
-# ['no_of_adults', 'no_of_children', 'no_of_weekend_nights', 'no_of_week_nights', 'type_of_meal_plan',
-#  'required_car_parking_space', 'room_type_reserved', 'lead_time', 'arrival_year', 'arrival_month',
-#  'arrival_date', 'market_segment_type', 'repeated_guest', 'no_of_previous_cancellations',
-#  'no_of_previous_bookings_not_canceled', 'avg_price_per_room', 'no_of_special_requests', 'booking_status']
-
-
-temp = df.rename(columns={
-    'arrival_year': 'year',
-    'arrival_month': 'month',
-    'arrival_date': 'day'
-})
-df['date_NEW'] = pd.to_datetime(temp[['year', 'month', 'day']], errors='coerce')
-df['date_NEW'].head()
-
-df.isnull().sum()
-
-df.loc[(df['arrival_date']==29) &(df['arrival_month']==2)].count()
-df.loc[df['arrival_year']==2018,'date_NEW'].isnull().sum()
-df.loc[df['arrival_year']==2017,'date_NEW'].isnull().sum()
-df['date_NEW'].fillna('2018-02-28', inplace=True)
-
-df.drop('date_NEW', axis = 1, inplace = True)
-
-df['date_booking_NEW'] = df['date_NEW'] - pd.to_timedelta(df['lead_time'], unit='D')
-
-df['date_booking_NEW'].head()
-
-df['lead_time'].head()
-df.drop('date_booking_NEW', axis = 1 , inplace = True)
-# df2 = df.set_index('date_NEW')
-#
-# df2.loc[:,'lead_time'].plot(style='.',
-#           figsize=(15, 5),
-#           ms=1,
-#           #color=color_pal[0],
-#           subplots=True,
-#           grid=True)
-# plt.show(block=True)
-# df2.head()
-# df2 = df2.sort_index()
-# df2.head()
-
-df["no_of_guest_NEW"] = df["no_of_adults"]+df["no_of_children"]
-
-df["no_of_nights_NEW"] = df["no_of_weekend_nights"]+df["no_of_week_nights"]
-
-df['no_of_previous_cancellations'].value_counts()
-df['no_of_previous_bookings_not_canceled'].value_counts()
-
-df.head()
-
-
-
-df.dtypes
-
-
-
-# ohe_cols = [col for col in df.cat_cols if dataframe[col].dtypes == "O"]
-df.no_of_previous_bookings_not_canceled.value_counts().sort_index()
-df.columns
-df.loc[df["no_of_previous_bookings_not_canceled"]>=1,"booking_status"].count()/len(df)
 
 df = one_hot_encoder(df, cat_cols, drop_first=True)
 
-df.head()
-df.shape
 
-df_load()
+
 # Standartlaştırma
 
 X_scaled = StandardScaler().fit_transform(df[num_cols])
 df[num_cols] = pd.DataFrame(X_scaled, columns=df[num_cols].columns)
 
+
+##### Modelleme
 y = df["booking_status"]
 X = df.drop(["booking_status"], axis=1)
-
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=17)
-xgboost_model = XGBClassifier(random_state=17, use_label_encoder=False).fit(X_train,y_train)
 
+
+
+##### XGBOOST MODEL
+
+xgboost_model = XGBClassifier(random_state=17, use_label_encoder=False).fit(X_train,y_train)
+y_pred = xgboost_model.predict(X_test)
+accuracy_score(y_pred, y_test)
+plot_importance(xgboost_model, X, num=len(X))
 
 xgboost_model.get_params()
 cv_results = cross_validate(xgboost_model, X, y, cv=5, scoring=["accuracy", "f1", "roc_auc"])
 cv_results['test_accuracy'].mean()
-
 cv_results['test_f1'].mean()
-
 cv_results['test_roc_auc'].mean()
 
 
-y_pred = xgboost_model.predict(X_test)
-
+##### RANDOMFOREST MODEL
+rf_model = RandomForestClassifier(random_state=17).fit(X_train, y_train)
+y_pred = rf_model.predict(X_test)
 accuracy_score(y_pred, y_test)
 
 
+rf_model.get_params()
+cv_results = cross_validate(rf_model, X, y, cv=10, scoring=["accuracy", "f1", "roc_auc"])
+cv_results['test_accuracy'].mean()
+cv_results['test_f1'].mean()
+cv_results['test_roc_auc'].mean()
+plot_importance(rf_model, X, num=len(X))
 
+##### CATBOOST MODEL
+catboost_model = CatBoostClassifier(random_state=17, verbose=False).fit(X_train, y_train)
+y_pred = catboost_model.predict(X_test)
+accuracy_score(y_pred, y_test)
 
+catboost_model.get_params()
+cv_results = cross_validate(catboost_model, X, y, cv=5, scoring=["accuracy", "f1", "roc_auc"])
+cv_results['test_accuracy'].mean()
+cv_results['test_f1'].mean()
+cv_results['test_roc_auc'].mean()
+plot_importance(catboost_model, X, num=len(X))
 
-plot_importance(xgboost_model, X, num=len(X))
+############# LGBM MODEL
+lgbm_model = LGBMClassifier(random_state=17).fit(X_train, y_train)
+y_pred = lgbm_model.predict(X_test)
+accuracy_score(y_pred, y_test)
 
-
-
-
-
-
-
-lgbm_model = LGBMClassifier(random_state=17)
 lgbm_model.get_params()
 cv_results = cross_validate(lgbm_model, X, y, cv=5, scoring=["accuracy", "f1", "roc_auc"])
 cv_results['test_accuracy'].mean()
@@ -291,40 +315,32 @@ cv_results['test_roc_auc'].mean()
 
 
 
-
-
-
 base_models(X, y, scoring="accuracy")
 
+best_models = hyperparameter_optimization(X, y)
+
+voting_clf = voting_classifier(best_models, X, y)
+
+
+
+joblib.dump(voting_clf, "voting_clf2.pkl")
+
+new_model = joblib.load("voting_clf2.pkl")
 
 
 
 
 
-df.arrival_year.value_counts()
-df.columns
-df.dtypes
-df.describe().T
-df.nunique()
-
-df_load()
 
 
 
-df.head()
-
-
-df.loc[df.lead_time <=10, "booking_status"].value_counts()
-
-
-
-for col in num_cols:
-    plt.figure(figsize=(10,8))
-    #sns.distplot(df.loc[df.booking_status==1][col],kde_kws={'label':'Not Canceled'},color='green')
-    #sns.distplot(df.loc[df.booking_status==0][col],kde_kws={'label':'Canceled'},color='red')
-    sns.kdeplot(x=col,hue='booking_status',shade=True,data=df,)
-plt.legend(['Booking','No Booking'])
-plt.show(block=True)
+# for col in num_cols:
+#     plt.figure(figsize=(10,8))
+#     #sns.distplot(df.loc[df.booking_status==1][col],kde_kws={'label':'Not Canceled'},color='green')
+#     #sns.distplot(df.loc[df.booking_status==0][col],kde_kws={'label':'Canceled'},color='red')
+#     sns.kdeplot(x=col,hue='booking_status',shade=True,data=df,)
+# plt.legend(['Booking','No Booking'])
+# plt.show(block=True)
 
 
 

@@ -23,6 +23,9 @@ from streamlit_lottie import st_lottie
 import requests
 from PIL import Image
 import pandas as pd
+from matplotlib import pyplot as plt
+import seaborn as sns
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 st.set_page_config(page_title = "Miuul Resort Hotel Sunar!", page_icon = ":sunglasses:", layout = "wide")
 
@@ -87,3 +90,32 @@ with st.expander("2 - Veri Hakkında"):
         with col1,col2:
             image_v2 = Image.open('columns.jpg')
             st.image(image_v2, caption = 'Miuul Resort Hotel Degişkenler', width = 1200)
+
+
+with st.expander("3 - Grafikler Hakkında"):
+    with st.container():
+        st.markdown("<h2 style='text-align: center;'>GRAFİKLER ve YORUMLAMALAR</h2>", unsafe_allow_html = True)
+        st.write("---")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            bins = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 443]
+
+            df["lead_time_bin"] = pd.cut(df["lead_time"], bins = bins)
+            lead_time_counts = df.groupby(["lead_time_bin", "booking_status"]).size().reset_index(name = "count")
+            total_count = df.groupby(["lead_time_bin"]).size().reset_index(name = "total")
+
+            plt.figure(figsize = (12, 6))
+            sns.barplot(x = "lead_time_bin", y = "count", hue = "booking_status", data = lead_time_counts, palette = 'viridis')
+            sns.pointplot(x = "lead_time_bin", y = "total", data = total_count, color = "k")
+
+            plt.title("Count of Bookings by Lead Time")
+            plt.xlabel("Lead Time")
+            plt.ylabel("Count of Bookings")
+
+            plt.tight_layout()
+            plt.show(block = True)
+
+            st.pyplot()
+
+
