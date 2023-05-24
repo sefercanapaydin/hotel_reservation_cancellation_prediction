@@ -21,11 +21,6 @@
 
 
 
-
-
-
-
-
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -126,7 +121,7 @@ for col in cat_cols:
 
 
 ######################### outlier
-
+df2 = df.copy()
 check_outlier(df, num_cols)
 
 for col in num_cols:
@@ -137,6 +132,7 @@ for col in num_cols:
     plt.show(block = True)
 
 df2.describe().T
+
 #Before treshold
 #
 #                                          count    mean    std   min    25%    50%     75%     max
@@ -149,7 +145,7 @@ df2.describe().T
 # no_of_previous_bookings_not_canceled 36275.000   0.152  1.751 0.000  0.000  0.000   0.000  58.000
 # avg_price_per_room                   36275.000 103.372 34.844 0.000 80.750 99.450 120.000 540.000
 # booking_status                       36275.000   0.328  0.469 0.000  0.000  0.000   1.000   1.000
-#After treshold
+# 0.1- 0.9 treshold
 #                                          count    mean    std   min    25%    50%     75%     max
 # no_of_weekend_nights                 36275.000   0.812  0.863 0.000  0.000  1.000   2.000   5.000
 # no_of_week_nights                    36275.000   2.189  1.336 0.000  1.000  2.000   3.000   8.500 -
@@ -160,7 +156,29 @@ df2.describe().T
 # no_of_previous_bookings_not_canceled 36275.000   0.000  0.000 0.000  0.000  0.000   0.000   0.000 -
 # avg_price_per_room                   36275.000 103.338 34.636 0.000 80.750 99.450 120.000 266.200 -
 # booking_status                       36275.000   0.328  0.469 0.000  0.000  0.000   1.000   1.000
+# 0.01 - 0.99 treshold
+#                                          count     mean    std      min      25%      50%      75%      max
+# no_of_adults                         36275.000    1.847  0.516    0.000    2.000    2.000    2.000    4.000
+# no_of_children                       36275.000    0.104  0.401    0.000    0.000    0.000    0.000   10.000-
+# no_of_weekend_nights                 36275.000    0.812  0.863    0.000    0.000    1.000    2.000    5.000
+# no_of_week_nights                    36275.000    2.199  1.392    0.000    1.000    2.000    3.000   15.000
+# required_car_parking_space           36275.000    0.029  0.166    0.000    0.000    0.000    0.000    1.000
+# lead_time                            36275.000   85.052 85.579    0.000   17.000   57.000  125.000  443.000
+# arrival_year                         36275.000 2017.822  0.382 2017.000 2018.000 2018.000 2018.000 2018.000
+# arrival_month                        36275.000    7.432  3.048    1.000    5.000    8.000   10.000   12.000
+# arrival_date                         36275.000   15.616  8.625    1.000    8.000   16.000   23.000   31.000
+# repeated_guest                       36275.000    0.025  0.157    0.000    0.000    0.000    0.000    1.000
+# no_of_previous_cancellations         36275.000    0.000  0.000    0.000    0.000    0.000    0.000    0.000 -
+# no_of_previous_bookings_not_canceled 36275.000    0.099  0.835    0.000    0.000    0.000    0.000   10.000 -
+# avg_price_per_room                   36275.000  103.371 34.837    0.000   80.750   99.450  120.000  519.750
+# no_of_special_requests               36275.000    0.606  0.782    0.000    0.000    0.000    1.000    5.000
+# booking_status                       36275.000    0.328  0.469    0.000    0.000    0.000    1.000    1.000
 
+df2.loc[df2['no_of_previous_bookings_not_canceled']>0].count()/len(df2)
+df2.loc[df2['no_of_previous_bookings_not_canceled']==0].count()/len(df2)
+
+df2.loc[df2['no_of_previous_cancellations']>0].count()/len(df2)
+df2.loc[df2['no_of_previous_cancellations']==0].count()/len(df2)
 
 df2 = df.copy()
 
@@ -244,7 +262,7 @@ plt.xticks(rotation = 90)
 plt.title('Correlation Heatmap')
 plt.show(block=True)
 
-
+################# Encoding
 
 df = one_hot_encoder(df, cat_cols, drop_first=True)
 
@@ -261,7 +279,7 @@ y = df["booking_status"]
 X = df.drop(["booking_status"], axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=17)
 
-
+X.head()
 
 ##### XGBOOST MODEL
 
@@ -323,7 +341,7 @@ voting_clf = voting_classifier(best_models, X, y)
 
 
 
-joblib.dump(voting_clf, "voting_clf2.pkl")
+joblib.dump(voting_clf, "voting_clf1.pkl")
 
 new_model = joblib.load("voting_clf2.pkl")
 
@@ -346,16 +364,11 @@ new_model = joblib.load("voting_clf2.pkl")
 
 
 
+df_load()
 
 
-
-
-
-
-
-
-
-
+df.head()
+df.type_of_meal_plan.unique()
 
 cm = ConfusionMatrix(decision_tree)
 cm.fit(X_train, y_train)

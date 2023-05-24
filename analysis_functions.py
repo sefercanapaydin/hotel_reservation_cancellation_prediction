@@ -140,7 +140,7 @@ def missing_vs_target(dataframe, target, na_columns):
 
 
 
-def outlier_thresholds(dataframe, col_name, q1=0.1, q3=0.90):
+def outlier_thresholds(dataframe, col_name, q1=0.01, q3=0.99):
     quartile1 = dataframe[col_name].quantile(q1)
     quartile3 = dataframe[col_name].quantile(q3)
     interquantile_range = quartile3 - quartile1
@@ -174,7 +174,7 @@ def one_hot_encoder(dataframe, categorical_cols, drop_first=False):
 
 
 
-def base_models(X, y, scoring="roc_auc"):
+def base_models(X, y, scoring="accuracy"):
     print("Base Models....")
     classifiers = [('LR', LogisticRegression()),
                    ('KNN', KNeighborsClassifier()),
@@ -194,7 +194,7 @@ def base_models(X, y, scoring="roc_auc"):
 
 
 
-def hyperparameter_optimization(X, y, cv=3, scoring="roc_auc"):
+def hyperparameter_optimization(X, y, cv=5, scoring="accuracy"):
     print("Hyperparameter Optimization....")
     best_models = {}
     for name, classifier, params in classifiers:
@@ -215,7 +215,7 @@ def hyperparameter_optimization(X, y, cv=3, scoring="roc_auc"):
 def voting_classifier(best_models, X, y):
     print("Voting Classifier...")
 
-    voting_clf = VotingClassifier(estimators=[('KNN', best_models["KNN"]),
+    voting_clf = VotingClassifier(estimators=[('XGBoost', best_models["XGBoost"]),
                                               ('RF', best_models["RF"]),
                                               ('LightGBM', best_models["LightGBM"])],
                                   voting='soft').fit(X, y)
@@ -243,3 +243,21 @@ def plot_importance(model, features, num, save=False):
 
 
 
+
+
+
+
+from datetime import datetime
+
+
+year = 2023
+month = 5
+day = 24
+
+
+date = datetime(year, month, day)
+
+current_date =datetime(2017,1,1)
+lead_time = (date-current_date).days
+print(lead_time)
+type(current_date)
