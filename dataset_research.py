@@ -1,4 +1,4 @@
-# Booking_ID	Unique identifier of the booking.
+ Booking_ID	Unique identifier of the booking.
 # no_of_adults	The number of adults.
 # no_of_children	The number of children.
 # no_of_weekend_nights	Number of weekend nights (Saturday or Sunday).
@@ -125,13 +125,14 @@ df2 = df.copy()
 check_outlier(df, num_cols)
 
 for col in num_cols:
-    replace_with_thresholds(df2,col)
+    replace_with_thresholds(df,col)
 
 for col in num_cols:
     sns.boxplot(x=df2[col], whis = 1.5)
     plt.show(block = True)
 
 df2.describe().T
+
 
 #Before treshold
 #
@@ -262,6 +263,12 @@ plt.xticks(rotation = 90)
 plt.title('Correlation Heatmap')
 plt.show(block=True)
 
+
+
+high_correlated_cols(df)
+drop_list = high_correlated_cols(df, plot=True)
+df.drop(drop_list, axis=1, inplace=True)
+high_correlated_cols(df.drop(drop_list, axis=1), plot=True)
 ################# Encoding
 
 df = one_hot_encoder(df, cat_cols, drop_first=True)

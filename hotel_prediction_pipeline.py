@@ -94,8 +94,6 @@ def data_preprocessing(df):
 
     return X, y
 
-
-
 def main():
     df = df_load()
     X, y = data_preprocessing(df)
@@ -114,3 +112,46 @@ if __name__ == "__main__":
 # Accuracy: 0.8925706476137388
 # F1Score: 0.8289764318866539
 # ROC_AUC: 0.9515292269251306
+
+
+
+# C:\Users\Sefercan\anaconda3\python.exe C:\Users\Sefercan\Dropbox\final_project\hotel_prediction_pipeline.py
+# 2334
+# İşlem başladı
+# Base Models....
+# accuracy: 0.8033 (LR)
+# accuracy: 0.8284 (KNN)
+# accuracy: 0.8395 (SVC)
+# accuracy: 0.8542 (CART)
+# accuracy: 0.8897 (RF)
+# accuracy: 0.8141 (Adaboost)
+# accuracy: 0.8404 (GBM)
+# accuracy: 0.8844 (XGBoost)
+# accuracy: 0.8768 (LightGBM)
+# Hyperparameter Optimization....
+# ########## CART ##########
+# accuracy (Before): 0.8546
+# accuracy (After): 0.8649
+# CART best params: {'max_depth': 12, 'min_samples_split': 9}
+#
+# ########## RF ##########
+# accuracy (Before): 0.8892
+# accuracy (After): 0.8869
+# RF best params: {'max_depth': None, 'max_features': 7, 'min_samples_split': 15, 'n_estimators': 500}
+#
+# ########## XGBoost ##########
+# accuracy (Before): 0.8844
+# accuracy (After): 0.8944
+# XGBoost best params: {'colsample_bytree': 0.5, 'learning_rate': 0.1, 'max_depth': 8, 'n_estimators': 500}
+#
+# ########## LightGBM ##########
+# accuracy (Before): 0.8768
+# accuracy (After): 0.8956
+# LightGBM best params: {'colsample_bytree': 0.7, 'learning_rate': 0.01, 'n_estimators': 10000}
+#
+# Voting Classifier...
+# Accuracy: 0.8924879505883266
+# F1Score: 0.8288231161713395
+# ROC_AUC: 0.9515720334609802
+#
+# Process finished with exit code 0

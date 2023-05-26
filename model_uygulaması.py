@@ -90,7 +90,8 @@ if st.button("Onayla"):
     sonuc = new_model.predict(X.tail(1))
     a = sonuc[0]
     if a == 1:
-        a = "Bu müşteri rezervasyonun 0.8925 olasılıkla iptal etmiştir"
+        a = "Bu müşteri rezervasyonun 89% olasılıkla iptal edecektir"
     else:
-        a = "Bu müşteri rezervasyonunu 0.8925 olasılıkla iptal etmeyecektir"
+        a = "Bu müşteri rezervasyonunu 89% olasılıkla iptal etmeyecektir"
     st.write("Tahminleme Sonucu:", a)
+# prediction_proba

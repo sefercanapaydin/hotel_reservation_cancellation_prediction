@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from hyperparameters import *
 import joblib
 import plotly.express as px
-
+import streamlit as st
 
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier, AdaBoostClassifier
@@ -111,6 +111,18 @@ def correlation_matrix(df, cols):
     fig = sns.heatmap(df[cols].corr(), annot=True, linewidths=0.5, annot_kws={'size': 12}, linecolor='w', cmap='RdBu')
     plt.show(block=True)
 
+def high_correlated_cols(dataframe, plot=False, corr_th=0.90):
+    corr = dataframe.corr()
+    cor_matrix = corr.abs()
+    upper_triangle_matrix = cor_matrix.where(np.triu(np.ones(cor_matrix.shape), k=1).astype(bool))
+    drop_list = [col for col in upper_triangle_matrix.columns if any(upper_triangle_matrix[col] > corr_th)]
+    if plot:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        sns.set(rc={'figure.figsize': (15, 15)})
+        sns.heatmap(corr, cmap="RdBu")
+        plt.show(block=True)
+    return drop_list
 
 
 
@@ -140,7 +152,7 @@ def missing_vs_target(dataframe, target, na_columns):
 
 
 
-def outlier_thresholds(dataframe, col_name, q1=0.01, q3=0.99):
+def outlier_thresholds(dataframe, col_name, q1=0.05, q3=0.95):
     quartile1 = dataframe[col_name].quantile(q1)
     quartile3 = dataframe[col_name].quantile(q3)
     interquantile_range = quartile3 - quartile1
@@ -237,6 +249,7 @@ def plot_importance(model, features, num, save=False):
     plt.title('Features')
     plt.tight_layout()
     plt.show(block=True)
+    st.pyplot()
     if save:
         plt.savefig('importances.png')
 
